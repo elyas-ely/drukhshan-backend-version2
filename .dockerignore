@@ -1,0 +1,13 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+*.md
+firebase-service.json
+Dockerfile
+.dockerignore
+.vscode
+.idea
+dist
+coverage
