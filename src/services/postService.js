@@ -9,8 +9,6 @@ export const getAllPostsFn = async (userId, limit = 12, offset = 0) => {
     u.username, 
     u.profile, 
     u.city,
-    (SELECT COUNT(*)::int FROM likes l WHERE l.post_id = posts.id) AS likes_count,
-    EXISTS (SELECT 1 FROM likes l WHERE l.user_id = $1 AND l.post_id = posts.id)::BOOLEAN AS like_status,
     EXISTS (SELECT 1 FROM saves s WHERE s.user_id = $1 AND s.post_id = posts.id)::BOOLEAN AS save_status
   FROM posts
   INNER JOIN users u ON posts.user_id = u.user_id
@@ -26,10 +24,10 @@ export const getAllPostsFn = async (userId, limit = 12, offset = 0) => {
 export const getPopularPostsFn = async (userId) => {
   const query = `SELECT 
     posts.*, 
-    (SELECT COUNT(*)::int FROM likes l WHERE l.post_id = posts.id) AS likes_count,
-    EXISTS (SELECT 1 FROM likes l WHERE l.user_id = $1 AND l.post_id = posts.id) AS like_status,
+    u.city,
     EXISTS (SELECT 1 FROM saves s WHERE s.user_id = $1 AND s.post_id = posts.id) AS save_status
   FROM posts
+  INNER JOIN users u ON posts.user_id = u.user_id
   WHERE posts.popular = true
   ORDER BY posts.created_at DESC`
 
@@ -48,8 +46,6 @@ export const getPostByIdFn = async (postId, userId) => {
       u.city,
       u.whatsapp,
       u.phone_number1,
-      (SELECT COUNT(*)::int FROM likes l WHERE l.post_id = p.id) AS likes_count,
-      EXISTS (SELECT 1 FROM likes l WHERE l.user_id = $2 AND l.post_id = p.id) AS like_status,
       EXISTS (SELECT 1 FROM saves s WHERE s.user_id = $2 AND s.post_id = p.id) AS save_status
     FROM posts p
     INNER JOIN users u ON u.user_id = p.user_id
@@ -65,11 +61,11 @@ export const getPostByIdFn = async (postId, userId) => {
 export const getSavedPostFn = async (userId, limit, offset) => {
   const query = `SELECT 
     p.*, 
-    (SELECT COUNT(*)::int FROM likes l WHERE l.post_id = p.id) AS likes_count,
-    EXISTS (SELECT 1 FROM likes l WHERE l.user_id = $1 AND l.post_id = p.id)::BOOLEAN AS like_status,
+    u.city,
     EXISTS (SELECT 1 FROM saves s WHERE s.user_id = $1 AND s.post_id = p.id)::BOOLEAN AS save_status
   FROM posts p
   JOIN saves s ON p.id = s.post_id
+  INNER JOIN users u ON p.user_id = u.user_id
   WHERE s.user_id = $1
   ORDER BY s.created_at DESC
   LIMIT $2 OFFSET $3;`
@@ -83,11 +79,11 @@ export const getSavedPostFn = async (userId, limit, offset) => {
 export const getViewedPostFn = async (userId) => {
   const query = `SELECT 
     p.*, 
-    (SELECT COUNT(*)::int FROM likes l WHERE l.post_id = p.id) AS likes_count,
-    EXISTS (SELECT 1 FROM likes l WHERE l.user_id = $1 AND l.post_id = p.id)::BOOLEAN AS like_status,
+    u.city,
     EXISTS (SELECT 1 FROM saves s WHERE s.user_id = $1 AND s.post_id = p.id)::BOOLEAN AS save_status
   FROM posts p
   JOIN viewed_posts v ON p.id = v.post_id  -- Join with viewed_posts instead of saves
+  INNER JOIN users u ON p.user_id = u.user_id
   WHERE v.user_id = $1  -- Filter by user_id for the viewed posts
   ORDER BY v.created_at DESC;`
 
@@ -229,9 +225,7 @@ export const getFilteredPostFn = async (filters, userId, limit, offset) => {
     const offsetIdx = queryParams.push(offset)
 
     const query = `
-      SELECT posts.*,
-        (SELECT COUNT(*)::int FROM likes l WHERE l.post_id = posts.id) AS likes_count,
-        EXISTS (SELECT 1 FROM likes l WHERE l.user_id = $1 AND l.post_id = posts.id)::BOOLEAN AS like_status,
+      SELECT posts.*, u.city,
         EXISTS (SELECT 1 FROM saves s WHERE s.user_id = $1 AND s.post_id = posts.id)::BOOLEAN AS save_status
       FROM posts
       JOIN users u ON posts.user_id = u.user_id
@@ -314,9 +308,7 @@ export const getSponsoredFilteredPostFn = async (
     const offsetIdx = queryParams.push(offset)
 
     const query = `
-      SELECT posts.*,
-        (SELECT COUNT(*)::int FROM likes l WHERE l.post_id = posts.id) AS likes_count,
-        EXISTS (SELECT 1 FROM likes l WHERE l.user_id = $1 AND l.post_id = posts.id)::BOOLEAN AS like_status,
+      SELECT posts.*, u.city,
         EXISTS (SELECT 1 FROM saves s WHERE s.user_id = $1 AND s.post_id = posts.id)::BOOLEAN AS save_status
       FROM posts
       JOIN users u ON posts.user_id = u.user_id
@@ -345,8 +337,7 @@ export const getSponsoredFilteredPostFn = async (
 export const getPostsByUserIdFn = async (userId, myId, limit, offset) => {
   const query = `SELECT 
     p.*, 
-    (SELECT COUNT(*)::int FROM likes l WHERE l.post_id = p.id) AS likes_count,
-    EXISTS (SELECT 1 FROM likes l WHERE l.user_id = $2 AND l.post_id = p.id)::BOOLEAN AS like_status,
+    u.city,
     EXISTS (SELECT 1 FROM saves s WHERE s.user_id = $2 AND s.post_id = p.id)::BOOLEAN AS save_status
   FROM posts p
   JOIN users u ON p.user_id = u.user_id
@@ -366,8 +357,6 @@ export const getSponsoredPostsFn = async (userId, myId) => {
     u.username,
     u.profile,
     u.city,
-    (SELECT COUNT(*)::int FROM likes l WHERE l.post_id = p.id) AS likes_count,
-    EXISTS (SELECT 1 FROM likes l WHERE l.user_id = $2 AND l.post_id = p.id)::BOOLEAN AS like_status,
     EXISTS (SELECT 1 FROM saves s WHERE s.user_id = $2 AND s.post_id = p.id)::BOOLEAN AS save_status
   FROM posts p
   JOIN users u ON p.user_id = u.user_id
@@ -534,46 +523,6 @@ export const updateSaveFn = async (userId, postId) => {
   }
 }
 
-// =======================================
-// ============== UPDATE LIKE POST =======
-// =======================================
-export const updateLikeFn = async (userId, postId) => {
-  const connection = await client.connect()
-  try {
-    await connection.query('BEGIN')
-
-    // Check if the post is already liked
-    const { rows } = await connection.query(
-      `SELECT * FROM likes WHERE user_id = $1 AND post_id = $2`,
-      [userId, postId]
-    )
-
-    let result
-    if (rows.length > 0) {
-      // If already liked, delete it
-      await connection.query(
-        `DELETE FROM likes WHERE user_id = $1 AND post_id = $2`,
-        [userId, postId]
-      )
-      result = { status: 'unliked' }
-    } else {
-      // If not liked, like it
-      await connection.query(
-        `INSERT INTO likes (user_id, post_id) VALUES ($1, $2) RETURNING *`,
-        [userId, postId]
-      )
-      result = { status: 'liked' }
-    }
-
-    await connection.query('COMMIT')
-    return result
-  } catch (error) {
-    await connection.query('ROLLBACK')
-    throw error
-  } finally {
-    connection.release()
-  }
-}
 
 // =======================================
 // ============== UPDATE VIEWED POST =====

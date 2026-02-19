@@ -11,7 +11,6 @@ import {
   deletePostFn,
   getSearchPostsFn,
   updateSaveFn,
-  updateLikeFn,
   updateViewedPostsFn,
   updatePostStatusFn,
   getSponsoredPostsFn,
@@ -369,30 +368,6 @@ export const updateSave = async (req, res) => {
   }
 }
 
-// =======================================
-// ============== UPDATE SAVE POST =======
-// =======================================
-export const updateLike = async (req, res) => {
-  const userId = req.query?.userId
-  const postId = req.params?.postId
-
-  if (!userId || !postId) {
-    return res
-      .status(400)
-      .json({ error: 'Post ID and User ID are required (updateLike)' })
-  }
-
-  try {
-    const post = await updateLikeFn(userId, postId)
-    if (!post) {
-      return res.status(404).json({ message: 'Post not found' })
-    }
-    res.status(200).json({ message: 'post like updated susccesfully ' })
-  } catch (err) {
-    console.error('Error in updateLike:', err)
-    res.status(500).json({ error: 'Failed to retrieve post (updateLike)' })
-  }
-}
 
 // =======================================
 // ============== UPDATE VIEWED POST =======

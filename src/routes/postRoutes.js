@@ -14,7 +14,6 @@ import {
   updatePost,
   deletePost,
   updateSave,
-  updateLike,
   updateViewedPosts,
   updatePostStatus,
   getSponsoredFilteredPost,
@@ -46,7 +45,6 @@ router.post('/', createPost)
 // =======================================
 router.put('/:postId', updatePost)
 router.put('/saves/:postId', updateSave)
-router.put('/likes/:postId', updateLike)
 router.put('/viewed/:postId', updateViewedPosts)
 router.put('/status/:postId', updatePostStatus)
 
