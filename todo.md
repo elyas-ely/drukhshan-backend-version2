@@ -4,7 +4,6 @@
 3: improve and optimize the code
 4: create device tokens
 5: send notificaiton with send message
-6: hasInternet should reconnect to the socket
 7: blocking system
 8: delete chat
 

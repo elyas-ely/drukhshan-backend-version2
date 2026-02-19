@@ -2,13 +2,8 @@ import { client } from '../config/db.js'
 import crypto from 'crypto'
 
 export const executeQuery = async (query, params = []) => {
-  const connection = await client.connect()
-  try {
-    const result = await connection.query(query, params)
-    return result.rows
-  } finally {
-    connection.release()
-  }
+  const result = await client.query(query, params)
+  return result.rows
 }
 
 export function generateLikes(postId, count) {
