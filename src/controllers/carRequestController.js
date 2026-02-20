@@ -6,7 +6,7 @@ import {
   getCarRequestByIdFn,
   updateCarRequestFn,
 } from '../services/carRequestService.js'
-import { sendBulkNotifications } from '../utils/sendAdminNotification.js'
+// import { sendBulkNotifications } from '../utils/sendAdminNotification.js'
 
 // =======================================
 // ============== GET ALL REQUESTS =======
@@ -106,9 +106,9 @@ export const createCarRequest = async (req, res) => {
     const carRequest = await createCarRequestFn(data)
     // console.log(carRequest)
 
-    if (carRequest) {
-      await sendBulkNotifications(carRequest.car_name, carRequest.information)
-    }
+    // if (carRequest) {
+    //   await sendBulkNotifications(carRequest.car_name, carRequest.information)
+    // }
     return res.status(201).json(carRequest)
   } catch (error) {
     console.error('Error in createCarRequest:', error.stack || error)
@@ -141,12 +141,12 @@ export const updateCarRequest = async (req, res) => {
       })
     }
 
-    if (updatedCarRequest) {
-      await sendBulkNotifications(
-        updatedCarRequest.car_name,
-        updatedCarRequest.information
-      )
-    }
+    // if (updatedCarRequest) {
+    //   await sendBulkNotifications(
+    //     updatedCarRequest.car_name,
+    //     updatedCarRequest.information
+    //   )
+    // }
 
     return res.status(200).json(updatedCarRequest)
   } catch (error) {
