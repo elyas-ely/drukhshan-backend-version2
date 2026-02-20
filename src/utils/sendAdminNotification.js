@@ -6,9 +6,8 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 const isProduction = process.env.NODE_ENV === 'production'
-console.log('isProduction:', isProduction)
 
-const firebasePath = '/firebase-service.json'
+const firebasePath = './firebase-service.json'
 
 // Initialize Firebase only if file exists and not already initialized
 if (fs.existsSync(firebasePath)) {
