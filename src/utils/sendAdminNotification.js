@@ -8,9 +8,7 @@ dotenv.config()
 const isProduction = process.env.NODE_ENV === 'production'
 console.log('isProduction:', isProduction)
 
-const firebasePath = isProduction
-  ? '/app/firebase-service.json' // VPS path
-  : './firebase-service.json' // local dev path
+const firebasePath = '/firebase-service.json'
 
 // Initialize Firebase only if file exists and not already initialized
 if (fs.existsSync(firebasePath)) {
