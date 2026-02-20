@@ -10,10 +10,6 @@ RUN npm ci
 
 COPY . .
 
-# If you have a build step (TypeScript etc.)
-# RUN npm run build
-
-
 # -------- Production Stage --------
 FROM node:20-alpine
 
